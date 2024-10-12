@@ -6,16 +6,30 @@ This code is based on:
 
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
+
+Notes by Michael Hoss:
+For Python 3.10, we need to update the version of py-motmetrics to 1.4.0.
+Then, to keep this code working, we need to change back the types of OId HId to object because they are
+strings in nuscenes-devkit, whereas motmetrics changed these types to float from 1.1.3 to 1.4.0.
 """
 from collections import OrderedDict
 from itertools import count
 
-import motmetrics
 import numpy as np
 import pandas as pd
+from motmetrics import MOTAccumulator
+
+_INDEX_FIELDS = ['FrameId', 'Event']
 
 
-class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
+class MOTAccumulatorCustom(MOTAccumulator):
+    """
+    This custom class was created by nuscenes-devkit to use a faster implementation of
+    `new_event_dataframe_with_data` under compatibility with motmetrics<=1.1.3.
+    Now that we use motmetrics==1.4.0, we need to use this custom implementation to use
+    objects instead of strings for OId and HId.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -27,14 +41,30 @@ class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
 
         Params
         ------
-        indices: list
-            list of tuples (frameid, eventid)
-        events: list
-            list of events where each event is a list containing
-            'Type', 'OId', HId', 'D'
+        indices: dict
+            dict of lists with fields 'FrameId' and 'Event'
+        events: dict
+            dict of lists with fields 'Type', 'OId', 'HId', 'D'
         """
-        idx = pd.MultiIndex.from_tuples(indices, names=['FrameId', 'Event'])
-        df = pd.DataFrame(events, index=idx, columns=['Type', 'OId', 'HId', 'D'])
+        if len(events) == 0:
+            return MOTAccumulatorCustom.new_event_dataframe()
+
+        raw_type = pd.Categorical(
+            events['Type'],
+            categories=['RAW', 'FP', 'MISS', 'SWITCH', 'MATCH', 'TRANSFER', 'ASCEND', 'MIGRATE'],
+            ordered=False)
+        series = [
+            pd.Series(raw_type, name='Type'),
+            pd.Series(events['OId'], dtype=object, name='OId'),  # OId is string in nuscenes-devkit
+            pd.Series(events['HId'], dtype=object, name='HId'),  # HId is string in nuscenes-devkit
+            pd.Series(events['D'], dtype=float, name='D')
+        ]
+
+        idx = pd.MultiIndex.from_arrays(
+            [indices[field] for field in _INDEX_FIELDS],
+            names=_INDEX_FIELDS)
+        df = pd.concat(series, axis=1)
+        df.index = idx
         return df
 
     @staticmethod

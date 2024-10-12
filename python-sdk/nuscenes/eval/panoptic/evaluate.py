@@ -2,7 +2,7 @@
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 
 Script to evaluate Panoptic nuScenes panoptic segmentation (PS) or panoptic tracking (PT) metrics.
-Argument "task" could be one of ["segmentation", "tracking"], check eval/panoptic/README.md for more details of the
+Argument "task" could be one of ["segmentation", "tracking"], check eval/panoptic/README_original.md for more details of the
 tasks. Note tracking results will be evaluated with both the PT and PS metrics.
 
 Example usage to evaluate tracking metrics.

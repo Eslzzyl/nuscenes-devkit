@@ -95,7 +95,7 @@ class NuImages:
         Returns a record from table in constant runtime.
         :param table_name: Table name.
         :param token: Token of the record.
-        :return: Table record. See README.md for record details for each table.
+        :return: Table record. See README_original.md for record details for each table.
         """
         assert table_name in self.table_names, "Table {} not found".format(table_name)
 
